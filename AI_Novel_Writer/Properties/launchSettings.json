@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "AINovelWriter (Unpackaged)": {
+      "commandName": "Project",
+      "nativeDebugging": false
+    }
+  }
+}

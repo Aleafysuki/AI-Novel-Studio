@@ -1,0 +1,24 @@
+# ===== WorkBuddy 辅助目录 =====
+.workbuddy/
+AGENTS.md
+
+# ===== 构建产物 / 便携版 / 压缩包 =====
+AINovelWriter_Portable_x64/
+*.tar.gz
+*.zip
+
+# ===== 证书与密钥（含私钥，禁止入库）=====
+*.pfx
+*.cer
+*.key
+*.snk
+
+# ===== 交付说明（含本机路径与敏感操作指引）=====
+AI_Novel_Writer/README-交付说明.md
+
+# ===== IDE / VS 临时 =====
+.vs/
+
+# ===== 系统文件 =====
+Thumbs.db
+desktop.ini

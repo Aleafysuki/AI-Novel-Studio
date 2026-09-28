@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Page
+    x:Class="AINovelWriter.Views.HomePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <ScrollViewer>
+        <Grid Padding="48,36,48,48" MaxWidth="1180" HorizontalAlignment="Stretch">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- Hero -->
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12">
+                    <Border Width="46" Height="46" CornerRadius="12" VerticalAlignment="Center">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#7C3AED" Offset="0" />
+                                <GradientStop Color="#2E7DF6" Offset="1" />
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        <FontIcon Glyph="&#xE70F;" Foreground="White" FontSize="22" />
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="墨鸢 · AI 小说创作平台" FontSize="26" FontWeight="Bold" />
+                        <TextBlock Text="AI 生成 · 人类掌控 —— 像 Cursor 一样写小说" FontSize="14" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <Button Click="OnOpenProject">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE8E5;" FontSize="14" />
+                            <TextBlock Text="打开项目" />
+                        </StackPanel>
+                    </Button>
+                    <Button Click="OnSettings" Background="Transparent" BorderThickness="0" Padding="10" ToolTipService.ToolTip="应用设置">
+                        <FontIcon Glyph="&#xE713;" FontSize="16" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <!-- 主操作卡片 -->
+            <Grid Grid.Row="1" Margin="0,32,0,0" ColumnSpacing="20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- 创建新作品 -->
+                <Button Grid.Column="0" x:Name="CreateWorkButton" Click="OnCreateWork"
+                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="0" Height="188">
+                    <Button.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#7C3AED" Offset="0" />
+                            <GradientStop Color="#5B6BF6" Offset="1" />
+                        </LinearGradientBrush>
+                    </Button.Background>
+                    <Grid Padding="24" Width="330">
+                        <StackPanel Spacing="10" VerticalAlignment="Center">
+                            <FontIcon Glyph="&#xE710;" FontSize="30" Foreground="White" HorizontalAlignment="Left" />
+                            <TextBlock Text="创建新作品" FontSize="20" FontWeight="Bold" Foreground="White" />
+                            <TextBlock Text="填写名称 / 类型 / 世界观 / 平台 / AI 风格，一键进入编辑器"
+                                       TextWrapping="Wrap" FontSize="13" Foreground="#F0EAFE" />
+                        </StackPanel>
+                    </Grid>
+                </Button>
+
+                <!-- 大纲规划 -->
+                <Button Grid.Column="1" Click="OnOutlineMode"
+                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="0" Height="188"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                    <Grid Padding="24" Width="330">
+                        <StackPanel Spacing="10" VerticalAlignment="Center">
+                            <Border Width="46" Height="46" CornerRadius="10" HorizontalAlignment="Left" Background="#E7F0FE">
+                                <FontIcon Glyph="&#xE8FD;" FontSize="24" Foreground="#2E7DF6" />
+                            </Border>
+                            <TextBlock Text="大纲规划模式" FontSize="20" FontWeight="Bold" />
+                            <TextBlock Text="一句话创意 → AI 生成大纲 → 逐章确认 → AI 按规划写正文"
+                                       TextWrapping="Wrap" FontSize="13" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        </StackPanel>
+                    </Grid>
+                </Button>
+
+                <!-- 打开示例 -->
+                <Button Grid.Column="2" Click="OnOpenSample"
+                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="0" Height="188"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                    <Grid Padding="24" Width="330">
+                        <StackPanel Spacing="10" VerticalAlignment="Center">
+                            <Border Width="46" Height="46" CornerRadius="10" HorizontalAlignment="Left" Background="#E6F7F0">
+                                <FontIcon Glyph="&#xE8A5;" FontSize="24" Foreground="#10A37A" />
+                            </Border>
+                            <TextBlock Text="打开示例项目" FontSize="20" FontWeight="Bold" />
+                            <TextBlock Text="《剑道独尊 · 外传》—— 体验完整的 Cursor 式 AI 创作流程"
+                                       TextWrapping="Wrap" FontSize="13" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        </StackPanel>
+                    </Grid>
+                </Button>
+            </Grid>
+
+            <!-- 特性亮点 -->
+            <TextBlock Grid.Row="2" Text="核心能力" FontSize="17" FontWeight="SemiBold" Margin="2,40,0,14" />
+            <Grid Grid.Row="3" ColumnSpacing="16" RowSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Style="{StaticResource FeatureCard}">
+                    <StackPanel Spacing="8">
+                        <FontIcon Glyph="&#xE9E9;" FontSize="22" Foreground="#7C3AED" HorizontalAlignment="Left" />
+                        <TextBlock Text="AI 参与度滑块" FontWeight="SemiBold" FontSize="15" />
+                        <TextBlock Text="0–100% 连续调节 AI 的主动权：纯人工 → 轻度辅助 → 协同 → AI 主写 → 全自动。支持逐章覆盖。"
+                                   TextWrapping="Wrap" FontSize="12.5" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="1" Style="{StaticResource FeatureCard}">
+                    <StackPanel Spacing="8">
+                        <FontIcon Glyph="&#xE8BD;" FontSize="22" Foreground="#2E7DF6" HorizontalAlignment="Left" />
+                        <TextBlock Text="内联 AI 交互" FontWeight="SemiBold" FontSize="15" />
+                        <TextBlock Text="正文任意位置 + 号唤起续写；选中文本弹出续写/扩写/改对白等 20+ 快捷命令。"
+                                   TextWrapping="Wrap" FontSize="12.5" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="2" Style="{StaticResource FeatureCard}">
+                    <StackPanel Spacing="8">
+                        <FontIcon Glyph="&#xE8C4;" FontSize="22" Foreground="#10A37A" HorizontalAlignment="Left" />
+                        <TextBlock Text="Diff 审阅" FontWeight="SemiBold" FontSize="15" />
+                        <TextBlock Text="AI 不直接覆盖，以 −原文 / ＋修改 对比呈现，支持接受 / 拒绝 / 重新生成 / 局部采纳。"
+                                   TextWrapping="Wrap" FontSize="12.5" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="3" Style="{StaticResource FeatureCard}">
+                    <StackPanel Spacing="8">
+                        <FontIcon Glyph="&#xE7C3;" FontSize="22" Foreground="#E0426B" HorizontalAlignment="Left" />
+                        <TextBlock Text="设定一致性" FontWeight="SemiBold" FontSize="15" />
+                        <TextBlock Text="独立的世界观与人物卡，AI 自动引用以防 OOC，锁定设定不可违背。"
+                                   TextWrapping="Wrap" FontSize="12.5" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Grid>
+    </ScrollViewer>
+</Page>

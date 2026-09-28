@@ -1,0 +1,814 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Page
+    x:Class="AINovelWriter.Views.EditorPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="using:AINovelWriter.Models"
+    xmlns:vm="using:AINovelWriter.ViewModels"
+    mc:Ignorable="d">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- ============ 顶部工具栏 ============ -->
+        <Border Grid.Row="0" BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}" BorderThickness="0,0,0,1" Padding="16,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10">
+                    <Button Click="OnHome" Background="Transparent" BorderThickness="0" Padding="6" ToolTipService.ToolTip="返回首页">
+                        <FontIcon Glyph="&#xE80F;" FontSize="16" />
+                    </Button>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="{x:Bind Vm.Project.Title}" FontWeight="Bold" FontSize="15" />
+                        <TextBlock FontSize="11.5" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                            <Run Text="{x:Bind Vm.Project.Genre}" /><Run Text=" · " /><Run Text="{x:Bind Vm.Project.TargetPlatform}" />
+                        </TextBlock>
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+                    <Button Click="OnUndo" ToolTipService.ToolTip="撤销 (Ctrl+Z)" Background="Transparent" BorderThickness="0" Padding="8">
+                        <FontIcon Glyph="&#xE7A7;" FontSize="15" />
+                    </Button>
+                    <Button Click="OnRedo" ToolTipService.ToolTip="重做 (Ctrl+Y)" Background="Transparent" BorderThickness="0" Padding="8">
+                        <FontIcon Glyph="&#xE7A6;" FontSize="15" />
+                    </Button>
+                    <Button Click="OnSettings" ToolTipService.ToolTip="应用设置" Background="Transparent" BorderThickness="0" Padding="8">
+                        <FontIcon Glyph="&#xE713;" FontSize="15" />
+                    </Button>
+                    <ProgressRing IsActive="{x:Bind Vm.IsAiBusy, Mode=OneWay}" Width="18" Height="18" VerticalAlignment="Center" />
+                    <Button Click="OnOutline">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE8FD;" FontSize="14" />
+                            <TextBlock Text="大纲规划" />
+                        </StackPanel>
+                    </Button>
+                    <Button Click="OnOpen">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE8E5;" FontSize="14" />
+                            <TextBlock Text="打开" />
+                        </StackPanel>
+                    </Button>
+                    <Button Click="OnSave">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE74E;" FontSize="14" />
+                            <TextBlock Text="保存" />
+                        </StackPanel>
+                    </Button>
+                    <Button Click="OnSaveAs" ToolTipService.ToolTip="另存为">
+                        <FontIcon Glyph="&#xE792;" FontSize="14" />
+                    </Button>
+                    <Rectangle Width="1" Fill="{ThemeResource DividerStrokeColorDefaultBrush}" Margin="4,0" />
+                    <Button Click="OnExtraction" ToolTipService.ToolTip="智能设定提取——粘贴大量文本，自动提取人物/世界观">
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <FontIcon Glyph="&#xE81E;" FontSize="14" />
+                            <TextBlock Text="提取设定" FontSize="12" />
+                        </StackPanel>
+                    </Button>
+                    <Button Click="OnCharactersTable" ToolTipService.ToolTip="人物表格视图——以表格检视/编辑所有人物">
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <FontIcon Glyph="&#xE716;" FontSize="14" />
+                            <TextBlock Text="人物表格" FontSize="12" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ============ 三栏主体（可折叠 + 可调宽） ============ -->
+        <Grid Grid.Row="1" x:Name="MainGrid">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="LeftCol" Width="270" />
+                <ColumnDefinition Width="6" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="6" />
+                <ColumnDefinition x:Name="RightCol" Width="360" />
+            </Grid.ColumnDefinitions>
+
+            <!-- ======= 左栏：章节 / 人物 / 世界观 ======= -->
+            <Border Grid.Column="0" x:Name="LeftPanel" BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}" BorderThickness="0,0,1,0"
+                    Background="{ThemeResource LayerFillColorDefaultBrush}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0" Padding="12,10,12,6">
+                        <TextBlock Text="资料" Style="{StaticResource PanelHeader}" VerticalAlignment="Center" />
+                        <Button Click="OnToggleLeft" HorizontalAlignment="Right" Padding="4" Background="Transparent" BorderThickness="0" ToolTipService.ToolTip="折叠左栏">
+                            <FontIcon Glyph="&#xE76B;" FontSize="13" />
+                        </Button>
+                    </Grid>
+                    <ScrollViewer Grid.Row="1">
+                        <StackPanel Padding="12,4,12,12" Spacing="14">
+                            <!-- 章节 -->
+                            <Grid>
+                                <TextBlock Text="章节" Style="{StaticResource PanelHeader}" VerticalAlignment="Center" />
+                                <Button Click="OnAddChapter" HorizontalAlignment="Right" Padding="4" Background="Transparent" BorderThickness="0"
+                                        ToolTipService.ToolTip="新增章节">
+                                    <FontIcon Glyph="&#xE710;" FontSize="14" />
+                                </Button>
+                            </Grid>
+                            <ListView x:Name="ChaptersList" SelectionChanged="OnChapterSelectionChanged"
+                                      ItemsSource="{x:Bind Vm.Chapters}" SelectionMode="Single"
+                                      Margin="-4,0,-4,0">
+                                <ListView.ItemContainerStyle>
+                                    <Style TargetType="ListViewItem">
+                                        <Setter Property="Padding" Value="8,6" />
+                                        <Setter Property="MinHeight" Value="0" />
+                                    </Style>
+                                </ListView.ItemContainerStyle>
+                                <ListView.ItemTemplate>
+                                    <DataTemplate x:DataType="models:Chapter">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="4" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Rectangle Grid.Column="0" Width="3" RadiusX="2" RadiusY="2" VerticalAlignment="Stretch"
+                                                       Fill="{x:Bind Status, Mode=OneWay, Converter={StaticResource StatusColorConverter}}" Margin="0,2" />
+                                            <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                                                <TextBlock Text="{x:Bind Title, Mode=OneWay}" FontSize="13.5" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                    <TextBlock FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                                                        <Run Text="{x:Bind WordCount, Mode=OneWay}" /><Run Text=" 字" />
+                                                    </TextBlock>
+                                                    <Border VerticalAlignment="Center" CornerRadius="8" Padding="6,1"
+                                                            Background="{x:Bind AiRatio, Mode=OneWay, Converter={StaticResource AiRatioColor}}"
+                                                            Visibility="{x:Bind AiGeneratedWords, Mode=OneWay, Converter={StaticResource WordCountVisibility}}">
+                                                        <TextBlock Text="{x:Bind AiRatioLabel, Mode=OneWay}" FontSize="10" Foreground="White" />
+                                                    </Border>
+                                                </StackPanel>
+                                            </StackPanel>
+                                            <Button Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center" Padding="6" Margin="8,0,0,0"
+                                                    Background="Transparent" BorderThickness="0" ToolTipService.ToolTip="删除章节" Click="OnDeleteChapter">
+                                                <FontIcon Glyph="&#xE74D;" FontSize="13" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                            </Button>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+
+                            <!-- 人物 -->
+                            <Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" IsExpanded="True">
+                                <Expander.Header>
+                                    <Grid>
+                                        <TextBlock Text="人物" Style="{StaticResource PanelHeader}" VerticalAlignment="Center" />
+                                        <Button Click="OnAddCharacter" HorizontalAlignment="Right" Padding="4" Background="Transparent" BorderThickness="0"
+                                                ToolTipService.ToolTip="新增人物">
+                                            <FontIcon Glyph="&#xE710;" FontSize="13" />
+                                        </Button>
+                                    </Grid>
+                                </Expander.Header>
+                                <ItemsControl ItemsSource="{x:Bind Vm.Characters}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="models:Character">
+                                            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8" Padding="10,8" Margin="0,0,0,6"
+                                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                                                <Grid ColumnSpacing="6">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel Grid.Column="0" Spacing="2">
+                                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                                            <TextBlock Text="{x:Bind Name}" FontWeight="SemiBold" FontSize="13" />
+                                                            <TextBlock Text="{x:Bind Role}" FontSize="10.5" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
+                                                        </StackPanel>
+                                                        <TextBlock Text="{x:Bind PersonalityTags}" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                                                    </StackPanel>
+                                                    <Button Grid.Column="1" Padding="4" Background="Transparent" BorderThickness="0" ToolTipService.ToolTip="编辑"
+                                                            Click="OnEditCharacter">
+                                                        <FontIcon Glyph="&#xE70F;" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                    </Button>
+                                                    <Button Grid.Column="2" Padding="4" Background="Transparent" BorderThickness="0" ToolTipService.ToolTip="删除"
+                                                            Click="OnDeleteCharacter">
+                                                        <FontIcon Glyph="&#xE74D;" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                    </Button>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Expander>
+
+                            <!-- 世界观 -->
+                            <Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" IsExpanded="False">
+                                <Expander.Header>
+                                    <Grid>
+                                        <TextBlock Text="世界观设定" Style="{StaticResource PanelHeader}" VerticalAlignment="Center" />
+                                        <Button Click="OnAddWorld" HorizontalAlignment="Right" Padding="4" Background="Transparent" BorderThickness="0"
+                                                ToolTipService.ToolTip="新增设定">
+                                            <FontIcon Glyph="&#xE710;" FontSize="13" />
+                                        </Button>
+                                    </Grid>
+                                </Expander.Header>
+                                <ItemsControl ItemsSource="{x:Bind Vm.WorldSettings}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="models:WorldSetting">
+                                            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8" Padding="10,8" Margin="0,0,0,6"
+                                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                                                <Grid ColumnSpacing="6">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel Grid.Column="0" Spacing="3">
+                                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                                            <Border CornerRadius="4" Padding="5,1" Background="#EEE7FE">
+                                                                <TextBlock Text="{x:Bind TypeLabel}" FontSize="10" Foreground="#7C3AED" />
+                                                            </Border>
+                                                            <TextBlock Text="{x:Bind Title}" FontWeight="SemiBold" FontSize="12.5" VerticalAlignment="Center" />
+                                                            <FontIcon Glyph="&#xE72E;" FontSize="11" VerticalAlignment="Center"
+                                                                      Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                                      Visibility="{x:Bind IsLocked, Converter={StaticResource BoolToVisibility}}" />
+                                                        </StackPanel>
+                                                        <TextBlock Text="{x:Bind Content}" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                                                    </StackPanel>
+                                                    <Button Grid.Column="1" Padding="4" Background="Transparent" BorderThickness="0" ToolTipService.ToolTip="编辑"
+                                                            Click="OnEditWorld">
+                                                        <FontIcon Glyph="&#xE70F;" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                    </Button>
+                                                    <Button Grid.Column="2" Padding="4" Background="Transparent" BorderThickness="0" ToolTipService.ToolTip="删除"
+                                                            Click="OnDeleteWorld">
+                                                        <FontIcon Glyph="&#xE74D;" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                    </Button>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Expander>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+
+            <!-- 左分隔条（可拖拽调宽） -->
+            <Border Grid.Column="1" x:Name="LeftSplitter" Background="Transparent" PointerPressed="OnSplitterPressed"
+                    PointerMoved="OnSplitterMoved" PointerReleased="OnSplitterReleased" PointerEntered="OnSplitterEntered" PointerExited="OnSplitterExited">
+                <Rectangle Width="2" HorizontalAlignment="Center" Fill="{ThemeResource DividerStrokeColorDefaultBrush}" />
+            </Border>
+
+            <!-- 折叠后的左栏展开条 -->
+            <Button Grid.Column="0" x:Name="LeftExpandBtn" Visibility="Collapsed" VerticalAlignment="Center" HorizontalAlignment="Left"
+                    Padding="2" Background="Transparent" BorderThickness="0" Click="OnToggleLeft" ToolTipService.ToolTip="展开左栏">
+                <FontIcon Glyph="&#xE76C;" FontSize="13" />
+            </Button>
+
+            <!-- ======= 中栏：编辑器 + Diff + 浮动工具条 ======= -->
+            <Grid Grid.Column="2" x:Name="EditorCenterGrid">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <!-- 章标题 + AI 工具 -->
+                <Border Grid.Row="0" Padding="24,14,24,8">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0" Text="{x:Bind Vm.CurrentChapter.Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 FontSize="22" FontWeight="Bold" BorderThickness="0" Background="Transparent" Padding="0"
+                                 VerticalAlignment="Center" />
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                            <Button Click="OnContinueAtCursor">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon Glyph="&#xE710;" FontSize="13" Foreground="#7C3AED" />
+                                    <TextBlock Text="AI 续写（光标处）" />
+                                </StackPanel>
+                            </Button>
+                            <Button>
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon Glyph="&#xE945;" FontSize="13" />
+                                    <TextBlock Text="AI 快捷命令" />
+                                    <FontIcon Glyph="&#xE70D;" FontSize="10" />
+                                </StackPanel>
+                                <Button.Flyout>
+                                    <Flyout x:Name="QuickCmdFlyout">
+                                        <GridView x:Name="QuickCmdGrid" ItemsSource="{x:Bind Vm.QuickCommands}"
+                                                  IsItemClickEnabled="True" ItemClick="OnQuickCommandClick"
+                                                  SelectionMode="None" MaxWidth="360">
+                                            <GridView.ItemTemplate>
+                                                <DataTemplate x:DataType="vm:QuickCommandItem">
+                                                    <StackPanel Width="92" Height="66" Spacing="6" Padding="4"
+                                                                HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                        <FontIcon Glyph="{x:Bind Glyph}" FontSize="18" HorizontalAlignment="Center" Foreground="#7C3AED" />
+                                                        <TextBlock Text="{x:Bind Label}" FontSize="12" HorizontalAlignment="Center" />
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </GridView.ItemTemplate>
+                                        </GridView>
+                                    </Flyout>
+                                </Button.Flyout>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- 编辑器 + Diff 叠加 -->
+                <Grid Grid.Row="1" x:Name="EditorBodyGrid">
+                    <ScrollViewer x:Name="EditorScroller" Padding="24,0,24,16" ViewChanged="OnEditorScrolled">
+                        <TextBox x:Name="EditorBox" Text="{x:Bind Vm.EditorContent, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 SelectionChanged="OnEditorSelectionChanged"
+                                 AcceptsReturn="True" TextWrapping="Wrap" BorderThickness="0" Background="Transparent"
+                                 FontSize="15.5" FontFamily="Microsoft YaHei" MinHeight="600"
+                                 PlaceholderText="在此开始创作，或点击右上角『AI 续写』让 AI 从光标处生成…">
+                            <TextBox.ContextFlyout>
+                                <MenuFlyout x:Name="EditorContextFlyout" Opening="OnEditorContextFlyoutOpening" />
+                            </TextBox.ContextFlyout>
+                        </TextBox>
+                    </ScrollViewer>
+
+                    <!-- 浮动选中工具条（不挤压正文布局） -->
+                    <Border x:Name="SelectionToolbar" Visibility="Collapsed" HorizontalAlignment="Left" VerticalAlignment="Top"
+                            Background="{ThemeResource LayerFillColorAltBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1" CornerRadius="10" Padding="6,4">
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" MaxWidth="620">
+                                <ItemsControl ItemsSource="{x:Bind Vm.QuickCommands}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal" Spacing="4" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:QuickCommandItem">
+                                            <Button Click="OnToolbarCommand" Tag="{x:Bind Kind}" Padding="8,4" ToolTipService.ToolTip="{x:Bind Label}">
+                                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                                    <FontIcon Glyph="{x:Bind Glyph}" FontSize="12" />
+                                                    <TextBlock Text="{x:Bind Label}" FontSize="12" />
+                                                </StackPanel>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                            <Button Click="OnHideToolbar" Padding="6,4" Background="Transparent" BorderThickness="0" ToolTipService.ToolTip="关闭">
+                                <FontIcon Glyph="&#xE711;" FontSize="12" />
+                            </Button>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Diff 审阅面板 -->
+                    <Border Visibility="{x:Bind Vm.IsDiffMode, Mode=OneWay, Converter={StaticResource BoolToVisibility}}"
+                            Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
+                            BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}" BorderThickness="1"
+                            CornerRadius="12" Margin="24,4,24,16">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" Padding="16,12,16,6">
+                                <FontIcon Glyph="&#xE8C4;" FontSize="16" Foreground="#7C3AED" />
+                                <TextBlock Text="{x:Bind Vm.DiffTitle, Mode=OneWay}" FontWeight="Bold" FontSize="15" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <Border Grid.Row="1" Margin="16,0,16,8" Padding="10,8" CornerRadius="8" Background="{ThemeResource LayerFillColorAltBrush}">
+                                <TextBlock Text="{x:Bind Vm.DiffExplanation, Mode=OneWay}" FontSize="12.5" TextWrapping="Wrap"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            </Border>
+
+                            <ScrollViewer Grid.Row="2" Margin="16,0,16,8">
+                                <ItemsControl ItemsSource="{x:Bind Vm.DiffLines}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:DiffLineVm">
+                                            <Grid Background="{x:Bind Background}" Padding="8,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="20" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="{x:Bind Prefix}" FontFamily="Consolas"
+                                                           Foreground="{x:Bind Foreground}" FontWeight="Bold" />
+                                                <TextBlock Grid.Column="1" Text="{x:Bind Text}" TextWrapping="Wrap"
+                                                           Foreground="{x:Bind Foreground}" FontSize="14" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+
+                            <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Padding="16,8,16,14">
+                                <Button Command="{x:Bind Vm.RejectDiffCommand}">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <FontIcon Glyph="&#xE711;" FontSize="13" />
+                                        <TextBlock Text="拒绝" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Command="{x:Bind Vm.RegenerateDiffCommand}">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <FontIcon Glyph="&#xE72C;" FontSize="13" />
+                                        <TextBlock Text="重新生成" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Command="{x:Bind Vm.AcceptDiffCommand}" Style="{StaticResource AccentButtonStyle}">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <FontIcon Glyph="&#xE73E;" FontSize="13" />
+                                        <TextBlock Text="采纳修改" />
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Grid>
+
+            <!-- 右分隔条 -->
+            <Border Grid.Column="3" x:Name="RightSplitter" Background="Transparent" PointerPressed="OnSplitterPressed"
+                    PointerMoved="OnSplitterMoved" PointerReleased="OnSplitterReleased" PointerEntered="OnSplitterEntered" PointerExited="OnSplitterExited">
+                <Rectangle Width="2" HorizontalAlignment="Center" Fill="{ThemeResource DividerStrokeColorDefaultBrush}" />
+            </Border>
+
+            <!-- 折叠后的右栏展开条 -->
+            <Button Grid.Column="4" x:Name="RightExpandBtn" Visibility="Collapsed" VerticalAlignment="Center" HorizontalAlignment="Right"
+                    Padding="2" Background="Transparent" BorderThickness="0" Click="OnToggleRight" ToolTipService.ToolTip="展开右栏">
+                <FontIcon Glyph="&#xE76B;" FontSize="13" />
+            </Button>
+
+            <!-- ======= 右栏：AI 参与度 + 生成块 / Prompt / 历史 ======= -->
+            <Border Grid.Column="4" x:Name="RightPanel" BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}" BorderThickness="1,0,0,0"
+                    Background="{ThemeResource LayerFillColorDefaultBrush}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0" Padding="12,10,12,6">
+                        <TextBlock Text="AI 创作台" Style="{StaticResource PanelHeader}" VerticalAlignment="Center" />
+                        <Button Click="OnToggleRight" HorizontalAlignment="Right" Padding="4" Background="Transparent" BorderThickness="0" ToolTipService.ToolTip="折叠右栏">
+                            <FontIcon Glyph="&#xE76C;" FontSize="13" />
+                        </Button>
+                    </Grid>
+
+                    <Grid Grid.Row="1">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <!-- AI 参与度控制台 -->
+                        <Border Grid.Row="0" Margin="12,4,12,4" Padding="14" CornerRadius="12"
+                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                            <StackPanel Spacing="10">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon Glyph="&#xE9E9;" FontSize="15" Foreground="#7C3AED" />
+                                    <TextBlock Text="AI 参与度" FontWeight="Bold" FontSize="14" VerticalAlignment="Center" />
+                                    <Border CornerRadius="10" Padding="9,2" VerticalAlignment="Center"
+                                            Background="{x:Bind Vm.EffectiveForColor, Mode=OneWay, Converter={StaticResource ParticipationColor}}">
+                                        <TextBlock Text="{x:Bind Vm.ParticipationMode, Mode=OneWay}" Foreground="White" FontSize="11.5" FontWeight="SemiBold" />
+                                    </Border>
+                                    <TextBlock VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontSize="12">
+                                        <Run Text="{x:Bind Vm.EffectiveParticipation, Mode=OneWay}" /><Run Text="%" />
+                                    </TextBlock>
+                                </StackPanel>
+
+                                <Slider Minimum="0" Maximum="100" StepFrequency="1" TickFrequency="25"
+                                        Value="{x:Bind Vm.GlobalParticipation, Mode=TwoWay}"
+                                        IsEnabled="{x:Bind Vm.UseChapterOverride, Mode=OneWay, Converter={StaticResource InvertBool}}" />
+
+                                <CheckBox Content="本章单独覆盖参与度" IsChecked="{x:Bind Vm.UseChapterOverride, Mode=TwoWay}" FontSize="12.5" />
+                                <Slider Minimum="0" Maximum="100" StepFrequency="1" TickFrequency="25"
+                                        Value="{x:Bind Vm.ChapterParticipation, Mode=TwoWay}"
+                                        Visibility="{x:Bind Vm.UseChapterOverride, Mode=OneWay, Converter={StaticResource BoolToVisibility}}" />
+
+                                <TextBlock Text="{x:Bind Vm.ParticipationDesc, Mode=OneWay}" FontSize="12" TextWrapping="Wrap"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="当前能力" Style="{StaticResource PanelHeader}" />
+                                    <Grid ColumnSpacing="6" RowSpacing="6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource AbilityChip}">
+                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                <FontIcon FontSize="11" Glyph="&#xE73E;" Foreground="#10A37A" Visibility="{x:Bind Vm.CanAutoContinue, Mode=OneWay, Converter={StaticResource BoolToVisibility}}" />
+                                                <FontIcon FontSize="11" Glyph="&#xE711;" Foreground="#9AA0A6" Visibility="{x:Bind Vm.CanAutoContinue, Mode=OneWay, Converter={StaticResource BoolToInvertVisibility}}" />
+                                                <TextBlock Text="自动续写" FontSize="11.5" />
+                                            </StackPanel>
+                                        </Border>
+                                        <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource AbilityChip}">
+                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                <FontIcon FontSize="11" Glyph="&#xE73E;" Foreground="#10A37A" Visibility="{x:Bind Vm.CanAutoExpand, Mode=OneWay, Converter={StaticResource BoolToVisibility}}" />
+                                                <FontIcon FontSize="11" Glyph="&#xE711;" Foreground="#9AA0A6" Visibility="{x:Bind Vm.CanAutoExpand, Mode=OneWay, Converter={StaticResource BoolToInvertVisibility}}" />
+                                                <TextBlock Text="自动扩写" FontSize="11.5" />
+                                            </StackPanel>
+                                        </Border>
+                                        <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource AbilityChip}">
+                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                <FontIcon FontSize="11" Glyph="&#xE73E;" Foreground="#10A37A" Visibility="{x:Bind Vm.CanAutoBuildSetting, Mode=OneWay, Converter={StaticResource BoolToVisibility}}" />
+                                                <FontIcon FontSize="11" Glyph="&#xE711;" Foreground="#9AA0A6" Visibility="{x:Bind Vm.CanAutoBuildSetting, Mode=OneWay, Converter={StaticResource BoolToInvertVisibility}}" />
+                                                <TextBlock Text="自动补设定" FontSize="11.5" />
+                                            </StackPanel>
+                                        </Border>
+                                        <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource AbilityChip}">
+                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                <FontIcon FontSize="11" Glyph="&#xE73E;" Foreground="#10A37A" Visibility="{x:Bind Vm.CanAdvancePlot, Mode=OneWay, Converter={StaticResource BoolToVisibility}}" />
+                                                <FontIcon FontSize="11" Glyph="&#xE711;" Foreground="#9AA0A6" Visibility="{x:Bind Vm.CanAdvancePlot, Mode=OneWay, Converter={StaticResource BoolToInvertVisibility}}" />
+                                                <TextBlock Text="推进剧情" FontSize="11.5" />
+                                            </StackPanel>
+                                        </Border>
+                                        <Border Grid.Row="2" Grid.Column="0" Style="{StaticResource AbilityChip}">
+                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                <FontIcon FontSize="11" Glyph="&#xE73E;" Foreground="#10A37A" Visibility="{x:Bind Vm.CanCompleteChapter, Mode=OneWay, Converter={StaticResource BoolToVisibility}}" />
+                                                <FontIcon FontSize="11" Glyph="&#xE711;" Foreground="#9AA0A6" Visibility="{x:Bind Vm.CanCompleteChapter, Mode=OneWay, Converter={StaticResource BoolToInvertVisibility}}" />
+                                                <TextBlock Text="整章生成" FontSize="11.5" />
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 标签页 -->
+                        <Pivot Grid.Row="1" SelectedIndex="{x:Bind Vm.RightTabIndex, Mode=TwoWay}" Padding="4,0">
+                            <!-- 生成块 -->
+                            <PivotItem Header="生成">
+                                <ScrollViewer>
+                                    <StackPanel Padding="8,4">
+                                        <StackPanel Visibility="{x:Bind Vm.PendingBlocks.Count, Mode=OneWay, Converter={StaticResource CountToVisibility}}">
+                                            <ItemsControl ItemsSource="{x:Bind Vm.PendingBlocks}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:DataType="models:AIBlock">
+                                                        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="10" Padding="12" Margin="0,0,0,10"
+                                                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                                                            <StackPanel Spacing="8">
+                                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                                    <Border CornerRadius="6" Padding="6,1" Background="#EEE7FE">
+                                                                        <TextBlock Text="{x:Bind KindLabel}" FontSize="10.5" Foreground="#7C3AED" />
+                                                                    </Border>
+                                                                    <TextBlock Text="AI 生成块" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
+                                                                </StackPanel>
+                                                                <TextBlock Text="{x:Bind GeneratedText}" TextWrapping="Wrap" FontSize="13" />
+                                                                <Border CornerRadius="6" Padding="8,5" Background="{ThemeResource LayerFillColorAltBrush}"
+                                                                        Visibility="{x:Bind Explanation, Converter={StaticResource StringToVisibility}}">
+                                                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                                                        <FontIcon Glyph="&#xE946;" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Top" />
+                                                                        <TextBlock Text="{x:Bind Explanation}" FontSize="11" TextWrapping="Wrap"
+                                                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                                    </StackPanel>
+                                                                </Border>
+                                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                                    <Button Click="OnInsertBlock" Style="{StaticResource AccentButtonStyle}" Padding="10,4">
+                                                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                            <FontIcon Glyph="&#xE73E;" FontSize="12" />
+                                                                            <TextBlock Text="插入正文" FontSize="12" />
+                                                                        </StackPanel>
+                                                                    </Button>
+                                                                    <Button Click="OnContinueBlock" Padding="8,4" ToolTipService.ToolTip="继续生成">
+                                                                        <FontIcon Glyph="&#xE72A;" FontSize="12" />
+                                                                    </Button>
+                                                                    <Button Click="OnRegenerateBlock" Padding="8,4" ToolTipService.ToolTip="重新生成">
+                                                                        <FontIcon Glyph="&#xE72C;" FontSize="12" />
+                                                                    </Button>
+                                                                    <Button Click="OnDiscardBlock" Padding="8,4" ToolTipService.ToolTip="丢弃">
+                                                                        <FontIcon Glyph="&#xE74D;" FontSize="12" />
+                                                                    </Button>
+                                                                </StackPanel>
+                                                            </StackPanel>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                        <StackPanel Spacing="10" Padding="12,40" HorizontalAlignment="Center"
+                                                    Visibility="{x:Bind Vm.PendingBlocks.Count, Mode=OneWay, Converter={StaticResource CountToVisibility}, ConverterParameter=invert}">
+                                            <FontIcon Glyph="&#xE945;" FontSize="30" Foreground="{ThemeResource TextFillColorTertiaryBrush}" HorizontalAlignment="Center" />
+                                            <TextBlock Text="暂无生成块" HorizontalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                            <TextBlock Text="点击『AI 续写』或选中文本使用快捷命令，AI 生成的内容会以生成块形式出现在这里，供你审阅后插入。"
+                                                       TextWrapping="Wrap" FontSize="12" TextAlignment="Center"
+                                                       Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </ScrollViewer>
+                            </PivotItem>
+
+                            <!-- Prompt 可视化 -->
+                            <PivotItem Header="Prompt">
+                                <ScrollViewer>
+                                    <StackPanel Padding="8,6" Spacing="16">
+                                        <StackPanel Spacing="6">
+                                            <TextBlock Text="写作风格" Style="{StaticResource PanelHeader}" />
+                                            <ComboBox HorizontalAlignment="Stretch" ItemsSource="{x:Bind Vm.StyleOptions}"
+                                                      SelectedItem="{x:Bind Vm.Project.Prompt.Style, Mode=TwoWay}" />
+                                        </StackPanel>
+                                        <StackPanel Spacing="6">
+                                            <TextBlock Text="人物一致性" Style="{StaticResource PanelHeader}" />
+                                            <ComboBox HorizontalAlignment="Stretch" ItemsSource="{x:Bind Vm.Project.Prompt.Consistencies}"
+                                                      SelectedItem="{x:Bind Vm.Project.Prompt.CharacterConsistency, Mode=TwoWay}" />
+                                        </StackPanel>
+                                        <StackPanel Spacing="6">
+                                            <TextBlock Text="创作自由度" Style="{StaticResource PanelHeader}" />
+                                            <ComboBox HorizontalAlignment="Stretch" ItemsSource="{x:Bind Vm.Project.Prompt.Freedoms}"
+                                                      SelectedItem="{x:Bind Vm.Project.Prompt.CreativeFreedom, Mode=TwoWay}" />
+                                        </StackPanel>
+                                        <StackPanel Spacing="6">
+                                            <TextBlock Text="补充要求" Style="{StaticResource PanelHeader}" />
+                                            <TextBox Height="80" TextWrapping="Wrap" AcceptsReturn="True"
+                                                     PlaceholderText="例如：多写打斗场面，减少心理描写…"
+                                                     Text="{x:Bind Vm.Project.Prompt.CustomInstruction, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                        </StackPanel>
+                                        <Button HorizontalAlignment="Stretch" Click="OnOpenPromptSettings">
+                                            <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                                                <FontIcon Glyph="&#xE713;" FontSize="13" />
+                                                <TextBlock Text="在设置中定制各命令 Prompt 模板" />
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                </ScrollViewer>
+                            </PivotItem>
+
+                            <!-- 历史 -->
+                            <PivotItem Header="历史">
+                                <ScrollViewer>
+                                    <ItemsControl ItemsSource="{x:Bind Vm.History}" Padding="8,6">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="models:AIHistoryRecord">
+                                                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8" Padding="10" Margin="0,0,0,8"
+                                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                                                    <StackPanel Spacing="6">
+                                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                                            <Border CornerRadius="5" Padding="5,1" Background="#E7F0FE">
+                                                                <TextBlock Text="{x:Bind ActionLabel}" FontSize="10.5" Foreground="#2E7DF6" />
+                                                            </Border>
+                                                            <TextBlock Text="{x:Bind Title}" FontSize="12.5" FontWeight="SemiBold" VerticalAlignment="Center"
+                                                                       TextTrimming="CharacterEllipsis" />
+                                                        </StackPanel>
+                                                        <StackPanel Orientation="Horizontal" Spacing="10">
+                                                            <TextBlock Text="{x:Bind TimeLabel}" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                            <TextBlock FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                                                                <Run Text="±" /><Run Text="{x:Bind AffectedWords}" /><Run Text=" 字" />
+                                                            </TextBlock>
+                                                            <Button Click="OnRestoreHistory" Padding="6,2" Background="Transparent" BorderThickness="0">
+                                                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                    <FontIcon Glyph="&#xE7A7;" FontSize="11" />
+                                                                    <TextBlock Text="恢复" FontSize="11" />
+                                                                </StackPanel>
+                                                            </Button>
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </PivotItem>
+
+                            <!-- 🔍 联网搜索 -->
+                            <PivotItem Header="搜索">
+                                <ScrollViewer>
+                                    <StackPanel Padding="8,6" Spacing="10">
+                                        <StackPanel Spacing="6">
+                                            <TextBlock Text="联网搜索" Style="{StaticResource PanelHeader}" />
+                                            <TextBlock Text="搜索互联网上的写作素材，无需第三方 API" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                        </StackPanel>
+
+                                        <!-- 搜索栏 -->
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <TextBox x:Name="SearchBox" PlaceholderText="搜索人设、世界观、地点…" Width="220"
+                                                     Text="{x:Bind Vm.SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                     KeyDown="OnSearchKeyDown" />
+                                            <Button x:Name="SearchButton" Click="OnSearchWeb"
+                                                    IsEnabled="{x:Bind Vm.IsSearching, Converter={StaticResource InvertBool}, Mode=OneWay}">
+                                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                                    <FontIcon Glyph="&#xE721;" FontSize="13" />
+                                                    <TextBlock Text="搜索" FontSize="12" />
+                                                </StackPanel>
+                                            </Button>
+                                        </StackPanel>
+                                        <ProgressBar IsIndeterminate="{x:Bind Vm.IsSearching, Mode=OneWay}" Visibility="{x:Bind Vm.IsSearching, Mode=OneWay}" />
+
+                                        <!-- 状态提示 -->
+                                        <TextBlock Text="{x:Bind Vm.SearchStatus, Mode=OneWay}" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                   Visibility="{x:Bind Vm.SearchResults.Count, Converter={StaticResource CountToVisibility}, ConverterParameter=invert}" />
+
+                                        <!-- 搜索结果列表 -->
+                                        <ItemsControl ItemsSource="{x:Bind Vm.SearchResults}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="models:WebSearchResult">
+                                                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8" Padding="10" Margin="0,0,0,8"
+                                                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                                                        <StackPanel Spacing="4">
+                                                            <TextBlock Text="{x:Bind Title}" FontSize="12.5" FontWeight="SemiBold"
+                                                                       TextTrimming="CharacterEllipsis" MaxLines="2" />
+                                                            <TextBlock Text="{x:Bind Snippet}" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                                       TextWrapping="Wrap" MaxLines="3" />
+                                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                                <Button Click="OnFetchPage" Padding="6,2" FontSize="11">
+                                                                    <StackPanel Orientation="Horizontal" Spacing="3">
+                                                                        <FontIcon Glyph="&#xE8CE;" FontSize="11" />
+                                                                        <TextBlock Text="查看内容" />
+                                                                    </StackPanel>
+                                                                </Button>
+                                                                <TextBlock Text="{x:Bind Source}" FontSize="10" Foreground="{ThemeResource TextFillColorTertiaryBrush}" VerticalAlignment="Center" />
+                                                            </StackPanel>
+                                                        </StackPanel>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+
+                                        <!-- 页面内容展示 -->
+                                        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8" Padding="10" Margin="0,0,0,8"
+                                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                                                Visibility="{x:Bind Vm.SelectedPageContent, Converter={StaticResource NullToVisibility}, Mode=OneWay}">
+                                            <StackPanel Spacing="6">
+                                                <TextBlock Text="{x:Bind Vm.SelectedPageContent.Title, Mode=OneWay}" FontSize="13" FontWeight="SemiBold" />
+                                                <TextBlock Text="{x:Bind Vm.SelectedPageContent.Url, Mode=OneWay}" FontSize="10" Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                                           TextTrimming="CharacterEllipsis" />
+                                                <Border Background="{ThemeResource LayerFillColorAltBrush}" CornerRadius="6" Padding="8,6">
+                                                    <TextBlock Text="{x:Bind Vm.SelectedPageContent.Content, Mode=OneWay}" FontSize="10.5"
+                                                               TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                </Border>
+                                                <TextBlock Visibility="{x:Bind Vm.SelectedPageContent.IsTruncated, Mode=OneWay}"
+                                                           Text="内容过长已截断，点击链接查看完整页面" FontSize="10" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+                                </ScrollViewer>
+                            </PivotItem>
+                        </Pivot>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ============ 状态栏 ============ -->
+        <Border Grid.Row="2" BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}" BorderThickness="0,1,0,0" Padding="16,6"
+                Background="{ThemeResource LayerFillColorDefaultBrush}">
+            <Grid>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <FontIcon Glyph="&#xE946;" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <TextBlock Text="{x:Bind Vm.StatusText, Mode=OneWay}" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                </StackPanel>
+                <TextBlock HorizontalAlignment="Right" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                    <Run Text="本章 " /><Run Text="{x:Bind Vm.EditorContent.Length, Mode=OneWay}" /><Run Text=" 字" />
+                </TextBlock>
+            </Grid>
+        </Border>
+
+        <!-- ============ 角色编辑对话框（简化 + 放大） ============ -->
+        <ContentDialog x:Name="CharacterDialog" Grid.RowSpan="3" Title="角色" PrimaryButtonText="保存" CloseButtonText="取消"
+                       PrimaryButtonClick="OnCharacterDialogSave">
+            <StackPanel Spacing="10" Width="520">
+                <TextBox x:Name="CharName" Header="姓名 / 称呼（必填）" />
+                <Grid ColumnSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBox Grid.Column="0" x:Name="CharRole" Header="身份 / 定位（可选，如：主角、配角、反派）" />
+                    <TextBox Grid.Column="1" x:Name="CharAlias" Header="别名 / 外号（可选）" />
+                </Grid>
+                <TextBox x:Name="CharTags" Header="性格标签（可选，逗号分隔）" PlaceholderText="坚韧,内敛,执着" />
+                <TextBox x:Name="CharNotes" Header="角色设定（可选，自由填写）"
+                         PlaceholderText="可写：口头禅 / 外貌 / 背景故事 / 能力技能 / 动机，或任何自定义设定。不填也完全可以。"
+                         Height="200" AcceptsReturn="True" TextWrapping="Wrap" />
+            </StackPanel>
+        </ContentDialog>
+
+        <!-- ============ 世界观编辑对话框（放大） ============ -->
+        <ContentDialog x:Name="WorldDialog" Grid.RowSpan="3" Title="世界观设定" PrimaryButtonText="保存" CloseButtonText="取消"
+                       PrimaryButtonClick="OnWorldDialogSave">
+            <StackPanel Spacing="12" Width="520">
+                <ComboBox x:Name="WorldType" Header="类型" HorizontalAlignment="Stretch" />
+                <TextBox x:Name="WorldTitle" Header="标题" />
+                <TextBox x:Name="WorldContent" Header="内容" Height="220" AcceptsReturn="True" TextWrapping="Wrap"
+                         PlaceholderText="详细描述该设定，文字越多 AI 越能把握。可写历史、规则、势力关系等。" />
+                <CheckBox x:Name="WorldLocked" Content="锁定（AI 严格遵守，不得违背）" IsChecked="True" />
+            </StackPanel>
+        </ContentDialog>
+
+        <!-- ============ 通用确认对话框 ============ -->
+        <ContentDialog x:Name="ConfirmDialog" Grid.RowSpan="3" Title="确认" PrimaryButtonText="确定" CloseButtonText="取消"
+                       PrimaryButtonClick="OnConfirmDialogPrimary">
+            <TextBlock x:Name="ConfirmText" TextWrapping="Wrap" />
+        </ContentDialog>
+    </Grid>
+</Page>
